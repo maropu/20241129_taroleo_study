@@ -15,4 +15,4 @@
 # 本日の話
 
  - [DuckDBに関する雑多な話](./20241129_duckdb_study/duckdb_intro.md)
- - [DuckDB Extension機構を使用した外部機能追加に関する概要](./20241129_duckdb_study/duckdb_extension.md)
+ - [DuckDB Extension機構を使用した拡張機能の実装に関する概要](./20241129_duckdb_study/duckdb_extension.md)

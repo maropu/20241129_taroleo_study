@@ -669,6 +669,7 @@ static unique_ptr<FunctionData> ScanCsvDeserializer(Deserializer &deserializer, 
 
  - テストコードを眺めると[Client APIs](https://duckdb.org/docs/api/overview.html)からの利用が想定されているようなので，例えば論理プランの部分木を他のマシンにディスパッチして分散処理，のようなDuckDBを組み込んだ3rd-party製の処理系を作る際には便利そう
 
+[duckdb/test/api/serialized_plans/test_plan_serialization_bwc.cpp](https://github.com/duckdb/duckdb/blob/v1.1.3/test/api/serialized_plans/test_plan_serialization_bwc.cpp)
 ```c++
 TEST_CASE("Generate serialized plans file", "[.][serialization]") {
 	...
@@ -701,7 +702,6 @@ TEST_CASE("Generate serialized plans file", "[.][serialization]") {
 	test_deserialization(file_location);
 }
 ```
-[duckdb/test/api/serialized_plans/test_plan_serialization_bwc.cpp](https://github.com/duckdb/duckdb/blob/v1.1.3/test/api/serialized_plans/test_plan_serialization_bwc.cpp)
 
 ### 述語/射影のプッシュダウンの対応
 
@@ -715,11 +715,11 @@ TEST_CASE("Generate serialized plans file", "[.][serialization]") {
    - テストスクリプトとして認識される拡張子は[`.test`、`.test_slow`、`.test_coverage`の3種類](https://github.com/duckdb/duckdb/blob/19864453f7d0ed095256d848b46e7b8630989bac/test/sqlite/test_sqllogictest.cpp#L214-L223)である、通常のテストは拡張子が`.test`のファイルに記述すればよく、他の拡張子はテストの実行有無を切り替えるために用意されている
  - `make test`で`duckdb/test/unittset.cpp`がコンパイルされたバイナリ（`./build/release/$(TEST_PATH)`）が実行され、以下のようなテスト結果が表示される仕組みである
 
+[Makefile](https://github.com/maropu/duckdb_scanner_example/blob/006a12554572cdcc1c8fb01ec7bb1e0e9c9015aa/Makefile#L71-L72)
 ```makefile
 test_release: release
 	./build/release/$(TEST_PATH) --test-dir "$(PROJ_DIR)" "test/*"
 ```
-https://github.com/maropu/duckdb_scanner_example/blob/006a12554572cdcc1c8fb01ec7bb1e0e9c9015aa/Makefile#L71-L72
 
 ```shell
 $ make test
@@ -733,6 +733,7 @@ All tests passed (13 assertions in 1 test case)
    - 実のところ2018年8月に[`Sqllogictest`のコード](https://sqlite.org/sqllogictest/dir?ci=tip)を`duckdb/test/sqlite`以下にコピーして、それを改良しながら利用していることが[GitHubのcommitの履歴](https://github.com/duckdb/duckdb/commit/ae8c32678243dd63f39a66acc1e490a26abd6d2d#diff-c883adf6344584b21df866a28db0dfb7306d0e4bdb58c498a40aa3a9d7ceffeb)から確認できる
  - 具体的なテストスクリプトは以下のような内容になっていて、`query`や`statement`などのメタコマンド（後述）を使用して実装したテーブル関数に関するテストを記述する
 
+[test/sql/csv_scanner.test](https://github.com/maropu/duckdb_scanner_example/blob/006a12554572cdcc1c8fb01ec7bb1e0e9c9015aa/test/sql/csv_scanner.test)
 ```sql
 # name: test/sql/csv_scanner.test
 # description: Run tests for the csv scanner table functions
@@ -763,8 +764,6 @@ FROM scan_csv_ex('data/random.csv',
 ----
 buffer_size must be at least 1024 bytes
 ```
-https://github.com/maropu/duckdb_scanner_example/blob/006a12554572cdcc1c8fb01ec7bb1e0e9c9015aa/test/sql/csv_scanner.test
-
 
 ### SQLのテストスクリプト内で使用可能なメタコマンド
 
@@ -919,7 +918,7 @@ load __TEST_DIR__/mydb.db
 ## スレッド並列化による性能向上の寄与は？
 
  - Mac環境（2.3 GHz Quad-Core Intel Core i7）上でのDuckDB組み込み関数`read_csv`との性能比較
-   - 約10GBのVARCHAR,BIGINT,DOUBLEの3列からなるCSVデータ（乱数により生成した人工データ）
+   - 約10GBのVARCHAR，BIGINT，DOUBLEの3列からなるCSVデータ（乱数により生成した人工データ）
    - さすがの公式実装（`read_csv`），コア数までほぼ線形に速度が向上しているが，一方本実装（`scan_csv_ex`）は・・・
 
 <img src="./response_time_comparison.png" width="600">

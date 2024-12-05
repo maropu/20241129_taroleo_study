@@ -1,7 +1,7 @@
 # DuckDB Extension機構を使用した拡張機能の実装に関する概要
 
- - [DuckDBには柔軟なExtension機構](https://duckdb.org/docs/archive/1.0/extensions/overview)があり、実行時に拡張機能を動的にロードすることができる
-   - 新しいデータソース（ファイル形式や、データストア）、データキャッシュ機構、型、ドメイン固有の機能を追加することが可能
+ - [DuckDBには柔軟なExtension機構](https://duckdb.org/docs/archive/1.0/extensions/overview)があり，実行時に拡張機能を動的にロードすることができる
+   - 新しいデータソース（ファイル形式や，データストア），データキャッシュ機構，型，ドメイン固有の機能を追加することが可能
  - 本ドキュメントはDuckDBのExtension機構を使用してシンプルに実装したCSVデータを読み込むためのテーブル関数（[maropu/duckdb_scanner_example](https://github.com/maropu/duckdb_scanner_example)）を例に，拡張機能をどの様に実装すればよいかを概説する
    - 今回紹介する内容はDuckDBの[v1.1.3のソースコード](https://github.com/duckdb/duckdb/tree/v1.1.3)を使用して作成
  - 今回の説明に用いるCSVデータ読み込みのためのテーブル関数（`scan_csv_ex`）の主な仕様
@@ -49,7 +49,7 @@ D SELECT * FROM scan_csv_ex('data/test.csv', {'a': 'varchar', 'b': 'bigint', 'c'
  - [`src/csv_scanner_extension.cpp`](https://github.com/maropu/duckdb_scanner_example/blob/006a12554572cdcc1c8fb01ec7bb1e0e9c9015aa/src/csv_scanner_extension.cpp)にはDuckDB上で`INSTALL/LOAD`構文を用いてExtensionを読み込む際に呼び出される初期化関数を定義する必要がある
    - 初期化時に呼び出されるシンボル名は`${EXTENSION_NAME}_init`である必要がある
    - 注意点としてMac環境でコンパイルする際には，リンク時のオプションに[`-Wl,-exported_symbol,_${EXTENSION_NAME}_init -Wl,-exported_symbol,_${EXTENSION_NAME}_version`が指定](https://github.com/duckdb/duckdb/blob/19864453f7d0ed095256d848b46e7b8630989bac/CMakeLists.txt#L834-L836)される関係で，`${EXTENSION_NAME}_version`も併せて実装する必要がある
-     - ただしこの`${EXTENSION_NAME}_version`はDuckDBからExtensionのバージョンを表示する際には参照されず、現状用途は不明（詳細は後述）
+     - ただしこの`${EXTENSION_NAME}_version`はDuckDBからExtensionのバージョンを表示する際には参照されず，現状用途は不明（詳細は後述）
 
  ```c++
 #define DUCKDB_BUILD_LOADABLE_EXTENSION
@@ -175,7 +175,7 @@ void CsvScannerFunction::RegisterFunction(DatabaseInstance &db) {
 }
 ```
 
- - 第3引数以降で渡した4つのコールバック関数`function`、`bind`、`init_global`、`init_local`は下記の流れでDuckDBから呼び出される（スレッド数が2の場合）
+ - 第3引数以降で渡した4つのコールバック関数`function`，`bind`，`init_global`，`init_local`は下記の流れでDuckDBから呼び出される（スレッド数が2の場合）
    - `bind`は[`planner/binder`](https://github.com/duckdb/duckdb/tree/v1.1.3/src/planner/binder)以下にある論理プラン木（SQL文から変換した検証や最適化のための内部表現）のテーブル関数を含む葉ノードを初期化するためのコードから呼び出される
    - 一方，`init_global`/`init_local`/`function`は[`execution/operator/scan`](https://github.com/duckdb/duckdb/tree/v1.1.3/src/execution/operator/scan)以下のデータ読み込みのための物理プラン木（論理プラン木から変換される実行のための内部表現）の葉ノード実装（[`PhysicalTableScan`](https://github.com/duckdb/duckdb/blob/19864453f7d0ed095256d848b46e7b8630989bac/src/include/duckdb/execution/operator/scan/physical_table_scan.hpp)）から呼び出される
 
@@ -433,7 +433,7 @@ Viktor Leis et al., "Morsel-Driven Parallelism: A NUMA-Aware Query Evaluation Fr
  - 下記に示すコードからも分かる通り，（雑に言ってしまえば・・・）`DataChunk`は[`Vector`](https://github.com/duckdb/duckdb/blob/19864453f7d0ed095256d848b46e7b8630989bac/src/include/duckdb/common/types/vector.hpp#L78-L257)の列（`std::vector<Vector>`）で，`Vector`は主に2つの[`VectorBuffer`](https://github.com/duckdb/duckdb/blob/19864453f7d0ed095256d848b46e7b8630989bac/src/include/duckdb/common/types/vector_buffer.hpp#L69-L137)（`buffer`と`auxiliary`）から構成され，`VectorBuffer`は`STANDARD_VECTOR_SIZE`個の値を格納するために必要なメモリ領域（`data`）を保持する
    - `data`が示すメモリ領域は[`Allocator`](https://github.com/duckdb/duckdb/blob/19864453f7d0ed095256d848b46e7b8630989bac/src/include/duckdb/common/allocator.hpp#L85-L132)（デフォルトでは内部で`malloc`を使用した実装）経由で確保される
  - `Vector`への値の格納方法
-   - 固定長の型（BIGINTとDOUBLE）の場合、型のサイズから`buffer`上の書き込み位置が簡単に計算できるため、計算された書き込み位置に値を単純に格納する（`auxilaiary`は使用されない）
+   - 固定長の型（BIGINTとDOUBLE）の場合，型のサイズから`buffer`上の書き込み位置が簡単に計算できるため，計算された書き込み位置に値を単純に格納する（`auxilaiary`は使用されない）
    - 可変長の文字列の型（VARCHAR）の場合，可変長の文字列データは`auxiliary`に格納して，文字列データが格納された`auxiliary`上のメモリアドレスと文字列長などから構成される[`string_t`型の16B固定長データ](https://github.com/duckdb/duckdb/blob/19864453f7d0ed095256d848b46e7b8630989bac/src/include/duckdb/common/types/string_type.hpp#L223-L233)を`buffer`に格納する
      - 12B以下の文字列データの場合には`auxiliary`は使用されず，`string_t`型の固定長データに直接埋め込まれる
 
@@ -710,10 +710,10 @@ TEST_CASE("Generate serialized plans file", "[.][serialization]") {
 
 ## DuckDBのテストフレームワークに関して
 
- - DuckDBのテストコードはC++のテスト用のライブラリである[Catch2]()を用いて実装された[duckdb/test/unittest.cpp](https://github.com/duckdb/duckdb/blob/v1.1.3/test/unittest.cpp)で実行され、Extensionで実装したテーブル関数のテストにもこのテストフレームワークを利用することができる
- - cmake実行時に指定した`-DDUCKDB_EXTENSION_${EXTENSION_NAME}_TEST_PATH`のディレクトリ以下に存在するテストスクリプト（e.g., `xxx.test`）の内容を、`duckdb/test/unittest`が内部で`Catch2`を利用して実行する
-   - テストスクリプトとして認識される拡張子は[`.test`、`.test_slow`、`.test_coverage`の3種類](https://github.com/duckdb/duckdb/blob/19864453f7d0ed095256d848b46e7b8630989bac/test/sqlite/test_sqllogictest.cpp#L214-L223)である、通常のテストは拡張子が`.test`のファイルに記述すればよく、他の拡張子はテストの実行有無を切り替えるために用意されている
- - `make test`で`duckdb/test/unittset.cpp`がコンパイルされたバイナリ（`./build/release/$(TEST_PATH)`）が実行され、以下のようなテスト結果が表示される仕組みである
+ - DuckDBのテストコードはC++のテスト用のライブラリである[Catch2]()を用いて実装された[duckdb/test/unittest.cpp](https://github.com/duckdb/duckdb/blob/v1.1.3/test/unittest.cpp)で実行され，Extensionで実装したテーブル関数のテストにもこのテストフレームワークを利用することができる
+ - cmake実行時に指定した`-DDUCKDB_EXTENSION_${EXTENSION_NAME}_TEST_PATH`のディレクトリ以下に存在するテストスクリプト（e.g., `xxx.test`）の内容を，`duckdb/test/unittest`が内部で`Catch2`を利用して実行する
+   - テストスクリプトとして認識される拡張子は[`.test`，`.test_slow`，`.test_coverage`の3種類](https://github.com/duckdb/duckdb/blob/19864453f7d0ed095256d848b46e7b8630989bac/test/sqlite/test_sqllogictest.cpp#L214-L223)である，通常のテストは拡張子が`.test`のファイルに記述すればよく，他の拡張子はテストの実行有無を切り替えるために用意されている
+ - `make test`で`duckdb/test/unittset.cpp`がコンパイルされたバイナリ（`./build/release/$(TEST_PATH)`）が実行され，以下のようなテスト結果が表示される仕組みである
 
 [Makefile](https://github.com/maropu/duckdb_scanner_example/blob/006a12554572cdcc1c8fb01ec7bb1e0e9c9015aa/Makefile#L71-L72)
 ```makefile
@@ -730,8 +730,8 @@ All tests passed (13 assertions in 1 test case)
 ```
 
  - テストスクリプトはSQLiteの[`Sqllogictest`](https://sqlite.org/sqllogictest/doc/trunk/about.wiki)とほぼ同様の記法を採用している
-   - 実のところ2018年8月に[`Sqllogictest`のコード](https://sqlite.org/sqllogictest/dir?ci=tip)を`duckdb/test/sqlite`以下にコピーして、それを改良しながら利用していることが[GitHubのcommitの履歴](https://github.com/duckdb/duckdb/commit/ae8c32678243dd63f39a66acc1e490a26abd6d2d#diff-c883adf6344584b21df866a28db0dfb7306d0e4bdb58c498a40aa3a9d7ceffeb)から確認できる
- - 具体的なテストスクリプトは以下のような内容になっていて、`query`や`statement`などのメタコマンド（後述）を使用して実装したテーブル関数に関するテストを記述する
+   - 実のところ2018年8月に[`Sqllogictest`のコード](https://sqlite.org/sqllogictest/dir?ci=tip)を`duckdb/test/sqlite`以下にコピーして，それを改良しながら利用していることが[GitHubのcommitの履歴](https://github.com/duckdb/duckdb/commit/ae8c32678243dd63f39a66acc1e490a26abd6d2d#diff-c883adf6344584b21df866a28db0dfb7306d0e4bdb58c498a40aa3a9d7ceffeb)から確認できる
+ - 具体的なテストスクリプトは以下のような内容になっていて，`query`や`statement`などのメタコマンド（後述）を使用して実装したテーブル関数に関するテストを記述する
 
 [test/sql/csv_scanner.test](https://github.com/maropu/duckdb_scanner_example/blob/006a12554572cdcc1c8fb01ec7bb1e0e9c9015aa/test/sql/csv_scanner.test)
 ```sql
@@ -767,8 +767,8 @@ buffer_size must be at least 1024 bytes
 
 ### SQLのテストスクリプト内で使用可能なメタコマンド
 
- - 使用可能なメタコマンドは[duckdb/test/sqlite/sqllogic_parser.hpp](https://github.com/duckdb/duckdb/blob/19864453f7d0ed095256d848b46e7b8630989bac/test/sqlite/sqllogic_parser.hpp#L17-L39)に定義されている20種類である、ここではExtensionで実装するテーブル関数のテストに使用しそうな主要なものだけを取り上げる
-   - ここで紹介するメタコマンドの多くは[`Sqllogictest`のドキュメント](https://www.sqlite.org/sqllogictest/doc/trunk/about.wiki)でも説明されているため、併せて参照した方が良い
+ - 使用可能なメタコマンドは[duckdb/test/sqlite/sqllogic_parser.hpp](https://github.com/duckdb/duckdb/blob/19864453f7d0ed095256d848b46e7b8630989bac/test/sqlite/sqllogic_parser.hpp#L17-L39)に定義されている20種類である，ここではExtensionで実装するテーブル関数のテストに使用しそうな主要なものだけを取り上げる
+   - ここで紹介するメタコマンドの多くは[`Sqllogictest`のドキュメント](https://www.sqlite.org/sqllogictest/doc/trunk/about.wiki)でも説明されているため，併せて参照した方が良い
 
 ```c++
 enum class SQLLogicTokenType {
@@ -797,7 +797,7 @@ enum class SQLLogicTokenType {
 ```
 
 - `statement`（`SQLLOGIC_STATEMENT`）
-  - SQL文の成功or失敗をテストするための命令で、失敗を期待するテストでは出力されるエラーメッセージの内容も記述する
+  - SQL文の成功or失敗をテストするための命令で，失敗を期待するテストでは出力されるエラーメッセージの内容も記述する
 
 ```sql
 statement ok
@@ -805,39 +805,39 @@ CREATE TABLE t (a INT);
 
 statement error
 CREATE TABLE t (a INT);
----
+----
 Catalog Error: Table with name "t" already exists!
 ```
 
  - `query`（`SQLLOGIC_QUERY`）
-   - relationの結果を返却するSQL文をテストするための命令で、期待される結果を記述する
-   - `query`の後に出力内容に期待される列数分だけの型情報（`VARCHAR`なら`T`、`BIGINT`なら`I`、`DOUBLE`なら`R`）を列挙する、例えばスキーマが`(a: VARCHAR, b: BIGINT, c: DOUBLE)`である場合には`query TIR`と記述する
+   - relationの結果を返却するSQL文をテストするための命令で，期待される結果を記述する
+   - `query`の後に出力内容に期待される列数分だけの型情報（`VARCHAR`なら`T`，`BIGINT`なら`I`，`DOUBLE`なら`R`）を列挙する，例えばスキーマが`(a: VARCHAR, b: BIGINT, c: DOUBLE)`である場合には`query TIR`と記述する
 
 ```sql
 query TIR
 SELECT 'aaa', 1, 1.23;
----
+----
 aaa	1	1.23
 ```
 
  - `require`（`SQLLOGIC_REQUIRE`）
-   - 引数で与えたExtensionがロード可能であるか、可能である場合はロード出るかをテストする
-   - Extensionのテストには使うことは無いと思うが、[DuckDBの内部パラメータやコンパイル条件などのテスト](https://github.com/duckdb/duckdb/blob/19864453f7d0ed095256d848b46e7b8630989bac/test/sqlite/sqllogic_test_runner.cpp#L304-L439)にも利用されている
+   - 引数で与えたExtensionがロード可能であるか，可能である場合はロード出るかをテストする
+   - Extensionのテストには使うことは無いと思うが，[DuckDBの内部パラメータやコンパイル条件などのテスト](https://github.com/duckdb/duckdb/blob/19864453f7d0ed095256d848b46e7b8630989bac/test/sqlite/sqllogic_test_runner.cpp#L304-L439)にも利用されている
 
 ```sql
 require some_extension
 ```
 
  - `require-env`（`SQLLOGIC_REQUIRE_ENV`）
-   - 引数で与えた環境変数が定義されているかをテストする、`require-env SOME_ENV 1`と書くことで環境変数`SOME_ENV`の値が1であるかも確認する
+   - 引数で与えた環境変数が定義されているかをテストする，`require-env SOME_ENV 1`と書くことで環境変数`SOME_ENV`の値が1であるかも確認する
 
 ```sql
 require-env SOME_ENV
 ```
 
- - `loop`（`SQLLOGIC_LOOP`）、`concurrentloop`（`SQLLOGIC_CONCURRENT_LOOP`）、`endloop`（`SQLLOGIC_ENDLOOP`）
-   - 引数として与えた整数の範囲`[start, end]`で`end-start+1`回のループ処理を行う
-   - `iterator_name`は`[start, end]`のいずれかの整数が代入されたループ変数として`${iterator_name}`のように参照可能
+ - `loop`（`SQLLOGIC_LOOP`），`concurrentloop`（`SQLLOGIC_CONCURRENT_LOOP`），`endloop`（`SQLLOGIC_ENDLOOP`）
+   - 引数として与えた整数の範囲`[start, end)`で`end-start`回のループ処理を行う
+   - `iterator_name`は`[start, end)`のいずれかの整数が代入されたループ変数として`${iterator_name}`のように参照可能
    - `loop`を`concurrentloop`に置き換えるとスレッドで並列化される
 
 ```sql
@@ -846,14 +846,14 @@ loop i 0 4
 
 query TIR
 SELECT * FROM 'data/test_${i}.csv';
----
+----
 ...
 
 endloop
 ```
 
- - `foreach`（`SQLLOGIC_FOREACH`）、`concurrent_foreach（``SQLLOGIC_CONCURRENT_FOREACH`）、`endloop`（`SQLLOGIC_ENDLOOP`）
-   - 引数として与えたリストの要素を順に、リストの要素数だけのループ処理を行う
+ - `foreach`（`SQLLOGIC_FOREACH`），`concurrent_foreach（``SQLLOGIC_CONCURRENT_FOREACH`），`endloop`（`SQLLOGIC_ENDLOOP`）
+   - 引数として与えたリストの要素を順に，リストの要素数だけのループ処理を行う
    - `iterator_name`はリストのいずれかの要素が代入されたループ変数として`${iterator_name}`のように参照可能
    - `foreach`を`concurrentforeach`に置き換えるとスレッドで並列化される
 
@@ -863,14 +863,14 @@ foreach arg p1 p2 p3 p4
 
 query TIR
 SELECT * FROM func("${arg}");
----
+----
 ...
 
 endloop
 ```
 
- - `onlyif`（`SQLLOGIC_ONLY_IF`）、`skipif`（`SQLLOGIC_SKIP_IF`）
-   - `onlyif`は条件が真の時にテストを行い、`skipif`は条件が真の時にはテストを行わない
+ - `onlyif`（`SQLLOGIC_ONLY_IF`），`skipif`（`SQLLOGIC_SKIP_IF`）
+   - `onlyif`は条件が真の時にテストを行い，`skipif`は条件が真の時にはテストを行わない
 
 ```sql
 foreach state init test
@@ -886,28 +886,35 @@ INSERT INTO t VALUES (1, 'aaa');
 skipif state=init # or , `onlyif state=test`
 query IT
 SELECT * FROM t;
----
+----
 1	aaa
 
 endloop
 ```
 
  - `mode`（`SQLLOGIC_MODE`）
-   - `mode skip`と`mode unskip`の間のテストの実行を行わない
+   - `mode skip`を実行すると以降のテストを行わなくなる，`mode skip`実行したあとに`mode unskip`を実行するとテストを再開する
 
 ```sql
 mode skip
 
+# Skip this test
 statement ok
 CREATE TABLE t (a UNSUPPORTED_TYPE);
 
 mode unskip
+
+# Run this test
+query I
+SELECT 1;
+----
+1
 ```
 
  - `load`（`SQLLOGIC_LOAD`）
    - 引数として渡されたDBファイルを読み込む
    - 以下で使用されている予約語`__TEST_DIR__`はテスト実行環境に合わせて置換される，使用可能な予約語は以下3つである
-     - `__TEST_DIR__`: テストで使用する一時領域のパス、デフォルトでは`duckdb_unittest_tempdir`
+     - `__TEST_DIR__`: テストで使用する一時領域のパス，デフォルトでは`duckdb_unittest_tempdir/<PID>`（`<PID>`はテストを実行中のプロセスID）
      - `__WORKING_DIRECTORY__`: `unistd.h#getcwd()`が返す値
 	 - `__BUILD_DIRECTORY__`: `duckdb/build/release`の様にビルド条件に応じた出力先のパス
 

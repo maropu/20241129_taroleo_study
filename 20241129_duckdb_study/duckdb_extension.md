@@ -2,7 +2,7 @@
 
  - [DuckDBには柔軟なExtension機構](https://duckdb.org/docs/archive/1.0/extensions/overview)があり，実行時に拡張機能を動的にロードすることができる
    - 新しいデータソース（ファイル形式や，データストア），データキャッシュ機構，型，ドメイン固有の機能を追加することが可能
- - 本ドキュメントはDuckDBのExtension機構を使用してシンプルに実装したCSVデータを読み込むためのテーブル関数（[maropu/duckdb_scanner_example](https://github.com/maropu/duckdb_scanner_example)）を例に，拡張機能をどの様に実装すればよいかを概説する
+ - 本ドキュメントはDuckDBのExtension機構を使用してシンプルに実装したCSVデータを読み込むためのテーブル関数（[maropu/duckdb_scanner_example](https://github.com/maropu/duckdb_scanner_example/tree/91a3ef6c959790eb2346a17adaab9e0a260f0794)）を例に，拡張機能をどの様に実装すればよいかを概説する
    - 今回紹介する内容はDuckDBの[v1.1.3のソースコード](https://github.com/duckdb/duckdb/tree/v1.1.3)を使用して作成
  - 今回の説明に用いるCSVデータ読み込みのためのテーブル関数（`scan_csv_ex`）の主な仕様
    - 単一ファイルで構成されるCSVデータの読み込みは未対応
